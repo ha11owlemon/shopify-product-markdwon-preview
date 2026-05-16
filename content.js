@@ -1,12 +1,14 @@
 /**
  * Shopify Product Helper - 入口文件
- * 检测 Shopify 商品编辑页面，初始化插件
+ * 检测 Shopify 商品编辑页面，等待表单加载后初始化插件
  */
 
 // 主逻辑
 function init() {
   if (isProductEditPage()) {
-    createBottomButton();
+    waitForFormLoad(() => {
+      createBottomButton();
+    });
   }
 }
 

@@ -12,7 +12,16 @@ function createBottomButton() {
 
   const button = document.createElement('button');
   button.id = 'shopify-helper-btn';
-  button.textContent = '🛒 Shopify Helper';
+
+  // Markdown 图标 SVG
+  const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  iconSvg.setAttribute('width', '20');
+  iconSvg.setAttribute('height', '20');
+  iconSvg.setAttribute('viewBox', '0 0 1024 1024');
+  iconSvg.classList.add('sh-btn-icon');
+  iconSvg.innerHTML = '<path d="M950.144 827.104H73.856A73.824 73.824 0 0 1 0.032 753.28V270.72a73.824 73.824 0 0 1 73.824-73.824h876.288a73.824 73.824 0 0 1 73.824 73.824v482.496a73.824 73.824 0 0 1-73.824 73.824z m-704-147.712v-192l98.464 123.104 98.432-123.104v192h98.464v-334.72h-98.464l-98.432 123.104-98.464-123.104H147.68v334.816zM905.856 512h-98.464v-167.392h-98.432V512h-98.464l147.68 172.32z" fill="currentColor"/>';
+  button.appendChild(iconSvg);
+
   button.addEventListener('click', () => {
     openPopup();
   });

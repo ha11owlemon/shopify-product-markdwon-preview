@@ -41,3 +41,53 @@ function findCmContent() {
 
   return null;
 }
+
+// 等待商品编辑表单加载完成
+// Shopify SPA 页面加载较慢，需要等待关键表单元素出现
+function waitForFormLoad(callback, timeout = 15000) {
+  // 检测关键元素：标题输入框、描述编辑器、或商品状态区域
+  function checkFormReady() {
+    // 策略1：标题输入框
+    const titleInput = document.querySelector('input[name="title"], #title-input, [class*="TitleField"] input');
+    if (titleInput) return true;
+
+    // 策略2：描述编辑器 (CM6)
+    if (document.querySelector('.cm-editor')) return true;
+
+    // 策略3：商品状态选择器
+    if (document.querySelector('[class*="ProductStatus"], [class*="StatusSelect"]')) return true;
+
+    // 策略4：通用表单容器（Shopify Polaris 的 FormLayout）
+    if (document.querySelector('[class*="FormLayout"], [class*="TextField"]')) return true;
+
+    return false;
+  }
+
+  // 立即检查一次
+  if (checkFormReady()) {
+    callback();
+    return;
+  }
+
+  // 用 MutationObserver 监听 DOM 变化
+  let called = false;
+  const timer = setTimeout(() => {
+    if (!called) {
+      called = true;
+      obs.disconnect();
+      callback(); // 超时也回调，让按钮出现
+    }
+  }, timeout);
+
+  const obs = new MutationObserver(() => {
+    if (!called && checkFormReady()) {
+      called = true;
+      clearTimeout(timer);
+      obs.disconnect();
+      // 稍微延迟让更多内容渲染完
+      setTimeout(callback, 300);
+    }
+  });
+
+  obs.observe(document.body, { childList: true, subtree: true });
+}

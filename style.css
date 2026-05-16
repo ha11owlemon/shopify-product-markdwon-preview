@@ -1,36 +1,37 @@
-/* Shopify Helper 底部悬浮按钮样式 */
+/* Shopify Helper 右上角悬浮按钮 */
 #shopify-helper-container {
   position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 70px;
+  right: 50px;
   z-index: 99999;
 }
 
 #shopify-helper-btn {
-  padding: 12px 28px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
-  background: linear-gradient(135deg, #5c6ac4, #4c3a8e);
-  border: none;
-  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: #4a4a4a;
+  background: #ebebeb;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(92, 106, 196, 0.4);
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  letter-spacing: 0.3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+#shopify-helper-btn .sh-btn-icon {
+  display: block;
+  pointer-events: none;
 }
 
 #shopify-helper-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(92, 106, 196, 0.55);
-  background: linear-gradient(135deg, #6e7bd8, #5a48a2);
+  border-color: #a1a5ab;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 
 #shopify-helper-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(92, 106, 196, 0.3);
+  background: #f3f4f6;
 }
 
 /* ===== 遮罩层 ===== */
