@@ -76,6 +76,10 @@ function openPopup() {
 
   // 关闭事件
   const close = () => {
+    // 关闭时一次性同步到 CM6
+    if (memoryContent) {
+      syncMdToCm(memoryContent);
+    }
     stopCmStatusPolling();
     overlay.classList.remove('sh-overlay-visible');
     popup.classList.remove('sh-popup-visible');
@@ -120,18 +124,15 @@ function openPopup() {
   };
   tryReadCm();
 
-  // 3) MD 编辑器输入：渲染预览 + 同步到 CM6
+  // 3) MD 编辑器输入：仅渲染预览 + 更新内存（关闭时才同步到 CM6）
   textarea.addEventListener('input', () => {
     const text = textarea.value;
     memoryContent = text;
-    // 预览立即渲染
     try {
       preview.innerHTML = md.render(text || '');
     } catch (_) {
       preview.innerHTML = '<p style="color:#ef4444;">渲染出错</p>';
     }
-    // 同步到 CM6
-    syncMdToCm(text);
   });
 
   // 启动状态指示器轮询
