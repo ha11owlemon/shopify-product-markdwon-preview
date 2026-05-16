@@ -1,63 +1,87 @@
 /**
  * CodeMirror 6 编辑器桥接
  * 负责 MD ↔ CM6 双向同步
+ * 
+ * 通过 MAIN world 注入脚本 (cm-inject.js) 与 CM6 通信：
+ * - content script 发送 sh-cm-bridge 自定义事件
+ * - MAIN world 响应 sh-cm-bridge-response 自定义事件
+ * 
+ * 同步策略：
+ * - 打开 popup 时：从 CM6 读取内容到 MD 编辑器
+ * - MD 编辑器输入时：同步内容到 CM6
+ * - 内存备用：CM6 不可用时保存在内存中
  */
 
-// ===== 双向同步状态 =====
-let memoryContent = '';   // 内存备用存储（刷新页面才丢失）
-let isSyncing = false;    // 防止循环同步标志
-let cmObserver = null;    // CM6 → MD 观察器
+// 内存备用存储（刷新页面才丢失）
+let memoryContent = '';
+
+// ===== 向 MAIN world 发送命令并等待响应 =====
+function sendToMainWorld(cmd, text) {
+  return new Promise((resolve) => {
+    const id = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    const timeout = setTimeout(() => {
+      document.removeEventListener('sh-cm-bridge-response', handler);
+      resolve({ ok: false, error: 'timeout' });
+    }, 3000);
+
+    function handler(e) {
+      if (e.detail && e.detail.id === id) {
+        clearTimeout(timeout);
+        document.removeEventListener('sh-cm-bridge-response', handler);
+        resolve(e.detail);
+      }
+    }
+
+    document.addEventListener('sh-cm-bridge-response', handler);
+    document.dispatchEvent(
+      new CustomEvent('sh-cm-bridge', { detail: { id, cmd, text } })
+    );
+  });
+}
+
+// ===== 检查 CM6 是否可用 =====
+async function isCmAvailable() {
+  const resp = await sendToMainWorld('find');
+  return resp.ok && resp.found;
+}
 
 // ===== 读取 CM6 编辑器内容 =====
-function getCmText(el) {
-  const lines = el.querySelectorAll('.cm-line');
-  if (lines.length === 0) return el.textContent || '';
-  return Array.from(lines).map(line => line.textContent || '').join('\n');
+async function getCmTextAsync() {
+  const resp = await sendToMainWorld('read');
+  if (resp.ok) return resp.result || '';
+  return '';
 }
 
 // ===== 写入内容到 CM6 编辑器 =====
-function setCmText(el, text) {
-  el.focus();
-  const sel = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  sel.removeAllRanges();
-  sel.addRange(range);
-  document.execCommand('insertText', false, text);
+async function setCmTextAsync(text) {
+  const resp = await sendToMainWorld('write', text);
+  return resp;
 }
 
 // ===== MD → CM6 同步 =====
 function syncMdToCm(text) {
   memoryContent = text;
-  const el = findCmContent();
-  if (!el) return;
-
-  const currentCmText = getCmText(el);
-  if (currentCmText === text) return;
-  try {
-    isSyncing = true;
-    setCmText(el, text);
-  } catch (_) { /* 忽略写入错误 */ }
-  setTimeout(() => { isSyncing = false; }, 100);
+  // 异步发送，不需要等待结果（不阻塞输入）
+  setCmTextAsync(text).then((resp) => {
+    if (resp.ok) {
+      // 成功 - 让状态指示器知道
+    } else {
+      console.warn('[ShopifyHelper] syncMdToCm failed:', resp.error);
+    }
+  }).catch(() => {});
 }
 
-// ===== 启动 CM6 变更观察器（CM6 → MD 方向） =====
-function startCmObserver(cmEl, textarea, md) {
-  if (cmObserver) { cmObserver.disconnect(); cmObserver = null; }
-
-  cmObserver = new MutationObserver(() => {
-    if (isSyncing) return;
-    const cmText = getCmText(cmEl);
-    if (cmText === textarea.value) return;
-    isSyncing = true;
+// ===== 从 CM6 读取内容到 MD 编辑器（打开 popup 时调用） =====
+async function readCmToMd(textarea, md) {
+  const cmText = await getCmTextAsync();
+  if (cmText) {
     memoryContent = cmText;
     textarea.value = cmText;
     const preview = document.getElementById('sh-markdown-preview');
     if (md && preview) {
-      try { preview.innerHTML = md.render(cmText || ''); } catch (_) {}
+      try { preview.innerHTML = md.render(cmText); } catch (_) {}
     }
-    setTimeout(() => { isSyncing = false; }, 100);
-  });
-
-  cmObserver.observe(cmEl, { childList: true, characterData: true, subtree: true });
+    return true;
+  }
+  return false;
 }

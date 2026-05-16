@@ -99,44 +99,40 @@ function openPopup() {
     return;
   }
 
-  // 从内存恢复内容
+  // 1) 优先从内存恢复内容（上次编辑的）
   if (memoryContent) {
     textarea.value = memoryContent;
     try { preview.innerHTML = md.render(memoryContent); } catch (_) {}
   }
 
-  // 实时输入处理：渲染预览 + 同步到 CM6（无防抖）
+  // 2) 尝试从 CM6 读取内容（覆盖内存中的内容，以 CM6 为准）
+  const tryReadCm = async (retries = 0) => {
+    try {
+      const read = await readCmToMd(textarea, md);
+      if (!read && retries < 6) {
+        setTimeout(() => tryReadCm(retries + 1), 500);
+      }
+    } catch (_) {
+      if (retries < 6) {
+        setTimeout(() => tryReadCm(retries + 1), 500);
+      }
+    }
+  };
+  tryReadCm();
+
+  // 3) MD 编辑器输入：渲染预览 + 同步到 CM6
   textarea.addEventListener('input', () => {
-    if (isSyncing) return;
     const text = textarea.value;
     memoryContent = text;
+    // 预览立即渲染
     try {
       preview.innerHTML = md.render(text || '');
     } catch (_) {
       preview.innerHTML = '<p style="color:#ef4444;">渲染出错</p>';
     }
+    // 同步到 CM6
     syncMdToCm(text);
   });
-
-  // 尝试连接 CM6 并启动双向观察
-  const tryConnectCm = (retries = 0) => {
-    const cmEl = findCmContent();
-    if (cmEl) {
-      // 如果 MD 为空但 CM6 有内容，从 CM6 拉取
-      const cmText = getCmText(cmEl);
-      if (cmText && !textarea.value) {
-        isSyncing = true;
-        textarea.value = cmText;
-        memoryContent = cmText;
-        try { preview.innerHTML = md.render(cmText); } catch (_) {}
-        setTimeout(() => { isSyncing = false; }, 100);
-      }
-      startCmObserver(cmEl, textarea, md);
-    } else if (retries < 6) {
-      setTimeout(() => tryConnectCm(retries + 1), 500);
-    }
-  };
-  tryConnectCm();
 
   // 启动状态指示器轮询
   startCmStatusPolling();

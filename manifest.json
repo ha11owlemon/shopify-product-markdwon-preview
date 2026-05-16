@@ -11,6 +11,17 @@
         "https://*.myshopify.com/admin/products/*"
       ],
       "js": [
+        "scripts/cm-inject.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://admin.shopify.com/store/*/products/*",
+        "https://*.myshopify.com/admin/products/*"
+      ],
+      "js": [
         "libs/markdown-it.min.js",
         "scripts/page-detector.js",
         "scripts/markdown-renderer.js",
