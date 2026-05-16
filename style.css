@@ -104,10 +104,252 @@
   color: #1f2937;
 }
 
-/* 弹出面板 - 内容 */
-.sh-popup-body {
+/* ===== 编辑器主体区域 ===== */
+.sh-popup-content-area {
   flex: 1;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+/* 左侧编辑面板 */
+.sh-editor-panel {
+  flex: 0 0 400px;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+/* 右侧预览滚动容器 */
+.sh-preview-scroll {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #fff;
+}
+
+.sh-preview-panel {
+  min-width: 1400px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 面板标签 */
+.sh-panel-label {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.sh-editor-panel .sh-panel-label {
+  color: #4b5563;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sh-preview-panel .sh-panel-label {
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+  background: #fafafa;
+}
+
+/* Markdown 输入框 */
+.sh-markdown-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #1f2937;
+  background: #ffffff;
+  tab-size: 2;
+}
+
+.sh-markdown-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.sh-markdown-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sh-markdown-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sh-markdown-textarea::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.25);
+  border-radius: 3px;
+}
+
+.sh-markdown-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.45);
+}
+
+/* Markdown 预览区 */
+.sh-markdown-preview {
+  flex: 1;
+  padding: 20px 24px;
   overflow-y: auto;
-  padding: 24px;
+  font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.8;
   color: #374151;
+}
+
+.sh-preview-placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Markdown 渲染内容排版 */
+.sh-markdown-preview h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 24px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.sh-markdown-preview h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 20px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.sh-markdown-preview h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 16px 0 8px;
+}
+
+.sh-markdown-preview p {
+  margin: 8px 0;
+}
+
+.sh-markdown-preview ul,
+.sh-markdown-preview ol {
+  padding-left: 24px;
+  margin: 8px 0;
+}
+
+.sh-markdown-preview li {
+  margin: 4px 0;
+}
+
+.sh-markdown-preview code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  color: #5c6ac4;
+}
+
+.sh-markdown-preview pre {
+  background: #1e1e2e;
+  color: #e0e0e0;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.sh-markdown-preview pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 13px;
+}
+
+.sh-markdown-preview blockquote {
+  border-left: 4px solid #5c6ac4;
+  padding: 8px 16px;
+  margin: 12px 0;
+  background: #f5f3ff;
+  color: #4b5563;
+}
+
+.sh-markdown-preview a {
+  color: #5c6ac4;
+  text-decoration: underline;
+}
+
+.sh-markdown-preview img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.sh-markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.sh-markdown-preview th,
+.sh-markdown-preview td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.sh-markdown-preview th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.sh-markdown-preview hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 16px 0;
+}
+
+/* ===== 同步状态栏 ===== */
+.sh-sync-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.sh-sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sh-sync-detecting {
+  background: #eab308;
+  animation: sh-pulse 1s ease-in-out infinite;
+}
+
+.sh-sync-synced {
+  background: #22c55e;
+}
+
+.sh-sync-failed {
+  background: #ef4444;
+}
+
+@keyframes sh-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }

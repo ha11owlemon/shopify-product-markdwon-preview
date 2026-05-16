@@ -10,7 +10,7 @@
         "https://admin.shopify.com/store/*/products/*",
         "https://*.myshopify.com/admin/products/*"
       ],
-      "js": ["content.js"],
+      "js": ["libs/markdown-it.min.js", "content.js"],
       "css": ["style.css"],
       "run_at": "document_idle"
     }
