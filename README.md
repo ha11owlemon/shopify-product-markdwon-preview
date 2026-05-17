@@ -1,42 +1,69 @@
-# Shopify Product Helper
+# Shopify Markdown Preview
 
-一个 Chrome / Edge 浏览器插件，在 Shopify 商品编辑页面提供辅助功能。
+A Chrome / Edge browser extension that adds a real-time Markdown preview panel to the Shopify product editor, with rendering styles matching the [Ella Shopify theme](https://themeforest.net/item/ella-multipurpose-shopify-theme-os-20/23080797).
 
-## 功能
+## Features
 
-- 自动检测当前页面是否为 Shopify 商品编辑页面
-- 在编辑页面底部显示悬浮操作按钮
-- 支持 Shopify SPA 页面切换（无需刷新页面）
+- **One-click preview** — A floating button appears on the Shopify product edit page; click it to open a split-panel editor with live Markdown rendering.
+- **Ella theme fidelity** — Heading sizes, link styles, admonition blocks, coupon containers, and tables all replicate the Ella theme's CSS (including the `62.5%` root font-size trick).
+- **CodeMirror 6 sync** — Reads from and writes back to the Shopify editor's underlying CodeMirror 6 instance, so your changes persist natively.
+- **Table of Contents** — Auto-generated sticky TOC from `h1` headings with IntersectionObserver-based active highlighting and smooth-scroll navigation.
+- **Admonition blocks** — `:::note`, `:::tip`, `:::info`, `:::warning`, `:::danger`, `:::caution`, `:::success` (with `:::!` bang syntax variant).
+- **Coupon containers** — `:::coupon` blocks with copy-to-clipboard functionality.
+- **SPA-aware** — Detects URL changes in Shopify's single-page admin without page reloads.
 
-## 安装方法
+## Installation
 
 ### Chrome
 
-1. 打开 `chrome://extensions/`
-2. 开启右上角「开发者模式」
-3. 点击「加载已解压的扩展程序」
-4. 选择本项目文件夹
+1. Open `chrome://extensions/`
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked**
+4. Select this project folder
 
 ### Edge
 
-1. 打开 `edge://extensions/`
-2. 开启左下角「开发人员模式」
-3. 点击「加载扩展」
-4. 选择本项目文件夹
+1. Open `edge://extensions/`
+2. Enable **Developer mode** (left panel toggle)
+3. Click **Load extension**
+4. Select this project folder
 
-## 项目结构
+## Project Structure
 
 ```
-├── manifest.json    # 插件配置（Manifest V3）
-├── content.js      # 内容脚本（检测页面 + 注入按钮）
-├── style.css       # 按钮样式
-├── icons/          # 插件图标
-└── README.md
+├── manifest.json              # Extension manifest (Manifest V3)
+├── content.js                 # Entry point: page detection + floating button
+├── style.css                  # All styles (popup UI + Ella theme Markdown styles)
+├── icons/                     # Extension icons (16/48/128 px)
+├── libs/
+│   ├── markdown-it.min.js     # markdown-it core
+│   └── markdown-it-container.js  # Container plugin (admonition, coupon)
+└── scripts/
+    ├── page-detector.js       # URL matching for Shopify product edit pages
+    ├── cm-inject.js           # Injected into MAIN world to access CodeMirror 6
+    ├── cm-bridge.js           # Bridge: read/write CM6 content from content script
+    ├── markdown-renderer.js   # Markdown rendering engine (TOC, admonitions, coupons)
+    ├── popup.js               # Popup panel UI + editor logic
+    └── status-indicator.js    # CM6 connection status polling
 ```
 
-## 匹配的 Shopify 页面
+## Supported Pages
+
+The extension activates only on Shopify product edit pages:
 
 - `https://admin.shopify.com/store/{store}/products/{productId}`
 - `https://{store}.myshopify.com/admin/products/{productId}`
 
-> 仅匹配商品编辑页面（URL 中 products 后跟数字 ID），不匹配商品列表页。
+> Only product **edit** pages are matched (URL contains a numeric product ID after `/products/`). Product list pages are ignored.
+
+## How It Works
+
+1. **`cm-inject.js`** runs in the `MAIN` world and exposes the CodeMirror 6 editor instance on `window`.
+2. **`cm-bridge.js`** reads from and writes to that instance via `window.postMessage`.
+3. When the floating button is clicked, **`popup.js`** opens a panel with a Markdown textarea and a preview pane.
+4. **`markdown-renderer.js`** renders the Markdown using `markdown-it` with Ella-theme-matching styles.
+5. On panel close, the textarea content is synced back to CodeMirror 6.
+
+## License
+
+MIT
