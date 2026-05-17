@@ -488,7 +488,7 @@ div[data-markdown-body]:has(.toc-container) {
   margin: 0 0 8px 0;
 }
 
-.toc-item a {
+.toc-item .toc-link {
   color: #333;
   text-decoration: none !important;
   font-size: 14px;
@@ -496,10 +496,12 @@ div[data-markdown-body]:has(.toc-container) {
   padding: 4px 8px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
 }
 
-.toc-item a:hover,
-.toc-item a.active {
+.toc-item .toc-link:hover,
+.toc-item .toc-link.active {
   background: #e3f2fd;
   color: #0a6cdc;
 }

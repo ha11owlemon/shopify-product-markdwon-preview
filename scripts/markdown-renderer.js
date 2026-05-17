@@ -172,9 +172,13 @@ function showCopySuccess(button, originalText) {
 }
 
 // ===== 生成目录 TOC =====
+// 针对浏览器弹出层场景重写：滚动容器是 .sh-markdown-preview，无 sticky navbar
 function generateTOC(body) {
   var headings = body.querySelectorAll('h1');
   if (headings.length === 0) return;
+
+  // 弹出层场景：通过 id 直接查找滚动容器
+  var scrollContainer = document.getElementById('sh-markdown-preview');
 
   // 创建TOC容器
   var tocContainer = document.createElement('div');
@@ -186,33 +190,36 @@ function generateTOC(body) {
 
   // 为每个H1标签创建TOC项
   headings.forEach(function (heading, index) {
-    var id = heading.id || 'heading-' + (index + 1);
-    heading.id = id;
+    var headingId = heading.id || 'heading-' + (index + 1);
+    heading.id = headingId;
 
     var listItem = document.createElement('li');
     listItem.className = 'toc-item';
 
-    var link = document.createElement('a');
-    link.href = '#' + id;
+    // 使用 div 代替 a 标签，避免被 Shopify 页面拦截链接点击事件
+    var link = document.createElement('div');
+    link.className = 'toc-link';
+    link.setAttribute('data-target', headingId);
     link.textContent = heading.textContent;
-    link.onclick = (function (currentId) {
-      return function (e) {
-        e.preventDefault();
-        var element = document.getElementById(currentId);
-        var rect = element.getBoundingClientRect();
-        // 在预览面板内滚动，使用最近的滚动容器
-        var scrollParent = element.closest('.sh-preview-scroll') || window;
-        var currentScrollTop = scrollParent === window ? window.pageYOffset : scrollParent.scrollTop;
-        var navbarHeight = 0; // 预览面板无 navbar
-        var scrollPosition = currentScrollTop + rect.top - navbarHeight;
 
-        if (scrollParent === window) {
-          window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+    // 点击跳转
+    (function (targetId) {
+      link.addEventListener('click', function () {
+        var target = document.getElementById(targetId);
+        if (!target) return;
+
+        if (scrollContainer) {
+          // 在 .sh-markdown-preview 容器内精确滚动
+          var containerRect = scrollContainer.getBoundingClientRect();
+          var targetRect = target.getBoundingClientRect();
+          var scrollTarget = scrollContainer.scrollTop + (targetRect.top - containerRect.top);
+          scrollContainer.scrollTo({ top: scrollTarget, behavior: 'smooth' });
         } else {
-          scrollParent.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+          // 回退：使用 scrollIntoView
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      };
-    })(id);
+      });
+    })(headingId);
 
     listItem.appendChild(link);
     tocList.appendChild(listItem);
@@ -233,9 +240,9 @@ function generateTOC(body) {
   body.appendChild(tocContainer);
   body.appendChild(contentContainer);
 
-  // 使用 Intersection Observer API 实现目录高亮
+  // IntersectionObserver 高亮 - root 设为弹出层的滚动容器
   var observerOptions = {
-    root: body.closest('.sh-preview-scroll') || null,
+    root: scrollContainer || null,
     rootMargin: '0px 0px -70% 0px',
     threshold: 0
   };
@@ -243,13 +250,13 @@ function generateTOC(body) {
   var observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
-        var tocLinks = body.querySelectorAll('.toc-item a');
+        var tocLinks = body.querySelectorAll('.toc-link');
         tocLinks.forEach(function (link) {
           link.classList.remove('active');
         });
 
         var activeId = entry.target.id;
-        var activeLink = body.querySelector('.toc-item a[href="#' + activeId + '"]');
+        var activeLink = body.querySelector('.toc-link[data-target="' + activeId + '"]');
         if (activeLink) {
           activeLink.classList.add('active');
         }
@@ -263,12 +270,12 @@ function generateTOC(body) {
 
   // 初始化时手动触发一次高亮第一个
   setTimeout(function () {
-    var tocLinks = body.querySelectorAll('.toc-item a');
+    var tocLinks = body.querySelectorAll('.toc-link');
     tocLinks.forEach(function (link) {
       link.classList.remove('active');
     });
     if (headings.length > 0) {
-      var firstLink = body.querySelector('.toc-item a[href="#' + headings[0].id + '"]');
+      var firstLink = body.querySelector('.toc-link[data-target="' + headings[0].id + '"]');
       if (firstLink) {
         firstLink.classList.add('active');
       }
