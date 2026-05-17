@@ -23,6 +23,7 @@
       ],
       "js": [
         "libs/markdown-it.min.js",
+        "libs/markdown-it-container.js",
         "scripts/page-detector.js",
         "scripts/markdown-renderer.js",
         "scripts/cm-bridge.js",

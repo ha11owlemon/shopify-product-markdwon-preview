@@ -72,14 +72,14 @@ function syncMdToCm(text) {
 }
 
 // ===== 从 CM6 读取内容到 MD 编辑器（打开 popup 时调用） =====
-async function readCmToMd(textarea, md) {
+async function readCmToMd(textarea) {
   const cmText = await getCmTextAsync();
   if (cmText) {
     memoryContent = cmText;
     textarea.value = cmText;
-    const preview = document.getElementById('sh-markdown-preview');
-    if (md && preview) {
-      try { preview.innerHTML = md.render(cmText); } catch (_) {}
+    const mdContent = document.getElementById('sh-md-content');
+    if (mdContent) {
+      try { renderMarkdown(cmText, mdContent); } catch (_) {}
     }
     return true;
   }

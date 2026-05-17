@@ -1,15 +1,302 @@
 /**
  * Markdown 渲染器
- * markdown-it 实例管理（由 manifest 注入的本地脚本提供 window.markdownit）
+ * 完整移植自 halo-markdown-renderer.liquid 的渲染逻辑
+ *
+ * 功能：
+ * - Admonition 双模式注册（:::type 和 :::!type）
+ * - Coupon 优惠券容器（带复制券码功能）
+ * - TOC 目录生成（IntersectionObserver 高亮）
+ * - markdown-it 配置：html:true, linkify:true, typographer:true, breaks:true
  */
 
 let markdownItInstance = null;
 
 function getMarkdownIt() {
   if (markdownItInstance) return markdownItInstance;
-  if (typeof window.markdownit === 'function') {
-    markdownItInstance = window.markdownit();
-    return markdownItInstance;
+  if (typeof window.markdownit !== 'function') return null;
+  if (typeof window.markdownitContainer === 'undefined') {
+    console.warn('[Markdown Preview] markdown-it-container not loaded');
   }
-  return null;
+
+  var md = window.markdownit({ html: true, linkify: true, typographer: true, breaks: true });
+
+  // ===== Admonition 双模式注册（type + !type-bang） =====
+  function registerAdmonition(md, type, defTitle) {
+    md.use(window.markdownitContainer, type, {
+      validate: function (params) { return new RegExp('^' + type + '(\\s+.*)?$').test(params.trim()); },
+      render: function (tokens, idx) {
+        var m = tokens[idx].info.trim().match(new RegExp('^' + type + '\\s+(.*)$'));
+        if (tokens[idx].nesting === 1) {
+          var title = m && m[1] ? m[1] : defTitle;
+          return '<div class="admonition ' + type + '"><p class="admonition-title">' + title + '</p>';
+        } else {
+          return '</div>';
+        }
+      }
+    });
+  }
+
+  function registerAdmonitionDual(md, type, defTitle) {
+    registerAdmonition(md, type, defTitle);
+    md.use(window.markdownitContainer, type + '-bang', {
+      marker: '!',
+      validate: function (params) { return new RegExp('^' + type + '(\\s+.*)?$').test(params.trim()); },
+      render: function (tokens, idx) {
+        var m = tokens[idx].info.trim().match(new RegExp('^' + type + '\\s+(.*)$'));
+        if (tokens[idx].nesting === 1) {
+          var title = m && m[1] ? m[1] : defTitle;
+          return '<div class="admonition ' + type + '"><p class="admonition-title">' + title + '</p>';
+        } else {
+          return '</div>';
+        }
+      }
+    });
+  }
+
+  // 注册所有 admonition 类型（双模式）
+  [['note', 'Note'], ['tip', 'Tip'], ['info', 'Info'], ['warning', 'Warning'],
+   ['danger', 'Danger'], ['caution', 'Caution'], ['success', 'Success']].forEach(function (t) {
+    registerAdmonitionDual(md, t[0], t[1]);
+  });
+
+  // ===== Coupon 优惠券容器 =====
+  function registerCoupon(md) {
+    md.use(window.markdownitContainer, 'coupon', {
+      validate: function (params) { return params.trim() === 'coupon'; },
+      render: function (tokens, idx) {
+        if (tokens[idx].nesting === 1) {
+          return '<div class="coupon-container">';
+        } else {
+          return '</div>';
+        }
+      }
+    });
+  }
+
+  registerCoupon(md);
+
+  markdownItInstance = md;
+  return markdownItInstance;
+}
+
+// ===== 解析优惠券内容 =====
+function parseCouponContent(content) {
+  var lines = content.trim().split('\n');
+  var validity = '';
+  var condition = '';
+  var value = '';
+  var code = '';
+
+  lines.forEach(function (line) {
+    line = line.trim();
+    if (line.startsWith('有效期：')) {
+      validity = line.substring('有效期：'.length).trim();
+    } else if (line.startsWith('适用条件：')) {
+      condition = line.substring('适用条件：'.length).trim();
+    } else if (line.startsWith('金额：')) {
+      value = line.substring('金额：'.length).trim();
+    } else if (line.startsWith('券码：')) {
+      code = line.substring('券码：'.length).trim();
+    }
+  });
+
+  if (value && code) {
+    var conditionStyle = condition
+      ? ''
+      : 'style="height: 90px"';
+    return '<div class="coupon-wrapper">'
+      + '<div class="coupon">'
+      +   '<div class="coupon-header">'
+      +     '<div class="coupon-brand">FYSETC</div>'
+      +     '<div class="coupon-validity">' + (validity || '') + '</div>'
+      +   '</div>'
+      +   '<div class="coupon-body" ' + conditionStyle + '>'
+      +     '<div class="coupon-value">' + value + ' off</div>'
+      +     '<div class="coupon-condition">' + condition + '</div>'
+      +   '</div>'
+      +   '<div class="coupon-divider"></div>'
+      +   '<div class="coupon-footer">'
+      +     '<div class="coupon-code">' + code + '</div>'
+      +     '<button class="coupon-button" onclick="window.__shCopyCouponCode(\'' + code + '\', this)">COPY</button>'
+      +   '</div>'
+      + '</div></div>';
+  }
+  return content;
+}
+
+// ===== 复制优惠券代码到剪贴板（全局函数，供 onclick 调用） =====
+window.__shCopyCouponCode = function copyCouponCode(code, button) {
+  var originalText = button.textContent;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code).then(function () {
+      showCopySuccess(button, originalText);
+    }).catch(function (err) {
+      console.error('无法复制代码: ', err);
+      fallbackCopyTextToClipboard(code, button, originalText);
+    });
+  } else {
+    fallbackCopyTextToClipboard(code, button, originalText);
+  }
+};
+
+function fallbackCopyTextToClipboard(code, button, originalText) {
+  var textArea = document.createElement("textarea");
+  textArea.value = code;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-999999px";
+  textArea.style.top = "-999999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+
+  try {
+    var successful = document.execCommand('copy');
+    if (successful) {
+      showCopySuccess(button, originalText);
+    } else {
+      console.error('复制失败');
+    }
+  } catch (err) {
+    console.error('复制失败: ', err);
+  } finally {
+    document.body.removeChild(textArea);
+  }
+}
+
+function showCopySuccess(button, originalText) {
+  button.textContent = 'COPIED!';
+  setTimeout(function () {
+    button.textContent = originalText;
+  }, 1500);
+}
+
+// ===== 生成目录 TOC =====
+function generateTOC(body) {
+  var headings = body.querySelectorAll('h1');
+  if (headings.length === 0) return;
+
+  // 创建TOC容器
+  var tocContainer = document.createElement('div');
+  tocContainer.className = 'toc-container';
+
+  // 创建TOC列表
+  var tocList = document.createElement('ul');
+  tocList.className = 'toc-list';
+
+  // 为每个H1标签创建TOC项
+  headings.forEach(function (heading, index) {
+    var id = heading.id || 'heading-' + (index + 1);
+    heading.id = id;
+
+    var listItem = document.createElement('li');
+    listItem.className = 'toc-item';
+
+    var link = document.createElement('a');
+    link.href = '#' + id;
+    link.textContent = heading.textContent;
+    link.onclick = (function (currentId) {
+      return function (e) {
+        e.preventDefault();
+        var element = document.getElementById(currentId);
+        var rect = element.getBoundingClientRect();
+        // 在预览面板内滚动，使用最近的滚动容器
+        var scrollParent = element.closest('.sh-preview-scroll') || window;
+        var currentScrollTop = scrollParent === window ? window.pageYOffset : scrollParent.scrollTop;
+        var navbarHeight = 0; // 预览面板无 navbar
+        var scrollPosition = currentScrollTop + rect.top - navbarHeight;
+
+        if (scrollParent === window) {
+          window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+        } else {
+          scrollParent.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+        }
+      };
+    })(id);
+
+    listItem.appendChild(link);
+    tocList.appendChild(listItem);
+  });
+
+  tocContainer.appendChild(tocList);
+
+  // 创建内容容器
+  var contentContainer = document.createElement('div');
+  contentContainer.className = 'content-container';
+
+  // 移动所有内容到内容容器
+  while (body.firstChild) {
+    contentContainer.appendChild(body.firstChild);
+  }
+
+  // 将TOC和内容容器添加回body
+  body.appendChild(tocContainer);
+  body.appendChild(contentContainer);
+
+  // 使用 Intersection Observer API 实现目录高亮
+  var observerOptions = {
+    root: body.closest('.sh-preview-scroll') || null,
+    rootMargin: '0px 0px -70% 0px',
+    threshold: 0
+  };
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        var tocLinks = body.querySelectorAll('.toc-item a');
+        tocLinks.forEach(function (link) {
+          link.classList.remove('active');
+        });
+
+        var activeId = entry.target.id;
+        var activeLink = body.querySelector('.toc-item a[href="#' + activeId + '"]');
+        if (activeLink) {
+          activeLink.classList.add('active');
+        }
+      }
+    });
+  }, observerOptions);
+
+  headings.forEach(function (heading) {
+    observer.observe(heading);
+  });
+
+  // 初始化时手动触发一次高亮第一个
+  setTimeout(function () {
+    var tocLinks = body.querySelectorAll('.toc-item a');
+    tocLinks.forEach(function (link) {
+      link.classList.remove('active');
+    });
+    if (headings.length > 0) {
+      var firstLink = body.querySelector('.toc-item a[href="#' + headings[0].id + '"]');
+      if (firstLink) {
+        firstLink.classList.add('active');
+      }
+    }
+  }, 100);
+}
+
+/**
+ * 主渲染函数：将 Markdown 文本渲染到目标元素中
+ * @param {string} markdownText - 原始 Markdown 文本
+ * @param {HTMLElement} bodyEl - 目标 DOM 元素（应具有 data-markdown-body 属性）
+ */
+function renderMarkdown(markdownText, bodyEl) {
+  var md = getMarkdownIt();
+  if (!md) {
+    bodyEl.textContent = markdownText;
+    return;
+  }
+
+  bodyEl.innerHTML = md.render(markdownText);
+
+  // 处理优惠券容器
+  var couponContainers = bodyEl.querySelectorAll('.coupon-container');
+  couponContainers.forEach(function (couponContainer) {
+    var content = couponContainer.textContent || '';
+    couponContainer.innerHTML = parseCouponContent(content);
+  });
+
+  // 生成 TOC
+  generateTOC(bodyEl);
 }

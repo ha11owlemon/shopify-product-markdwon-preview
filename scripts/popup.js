@@ -43,7 +43,7 @@ function openPopup() {
   popup.id = 'shopify-helper-popup';
   popup.innerHTML = `
     <div class="sh-popup-header">
-      <span class="sh-popup-title">Shopify Helper</span>
+      <span class="sh-popup-title">Markdown效果预览</span>
       <button class="sh-popup-close" id="shopify-helper-popup-close">✕</button>
     </div>
     <div class="sh-popup-content-area">
@@ -55,7 +55,9 @@ function openPopup() {
         <div class="sh-preview-panel">
           <div class="sh-panel-label">预览</div>
           <div id="sh-markdown-preview" class="sh-markdown-preview">
-            <p class="sh-preview-placeholder">在左侧输入 Markdown 内容，此处将实时渲染预览</p>
+            <div data-markdown-body id="sh-md-content">
+              <p class="sh-preview-placeholder">在左侧输入 Markdown 内容，此处将实时渲染预览</p>
+            </div>
           </div>
         </div>
       </div>
@@ -104,24 +106,25 @@ function openPopup() {
   // ===== 初始化 Markdown 编辑器逻辑 =====
   const textarea = document.getElementById('sh-markdown-input');
   const preview = document.getElementById('sh-markdown-preview');
+  const mdContent = document.getElementById('sh-md-content');
 
   // 初始化 markdown-it
-  const md = getMarkdownIt();
+  var md = getMarkdownIt();
   if (!md) {
-    preview.innerHTML = '<p style="color:#ef4444;">markdown-it 库加载失败，预览功能不可用</p>';
+    mdContent.innerHTML = '<p style="color:#ef4444;">markdown-it 库加载失败，预览功能不可用</p>';
     return;
   }
 
   // 1) 优先从内存恢复内容（上次编辑的）
   if (memoryContent) {
     textarea.value = memoryContent;
-    try { preview.innerHTML = md.render(memoryContent); } catch (_) {}
+    try { renderMarkdown(memoryContent, mdContent); } catch (_) {}
   }
 
   // 2) 尝试从 CM6 读取内容（覆盖内存中的内容，以 CM6 为准）
   const tryReadCm = async (retries = 0) => {
     try {
-      const read = await readCmToMd(textarea, md);
+      const read = await readCmToMd(textarea);
       if (!read && retries < 6) {
         setTimeout(() => tryReadCm(retries + 1), 500);
       }
@@ -138,9 +141,9 @@ function openPopup() {
     const text = textarea.value;
     memoryContent = text;
     try {
-      preview.innerHTML = md.render(text || '');
+      renderMarkdown(text || '', mdContent);
     } catch (_) {
-      preview.innerHTML = '<p style="color:#ef4444;">渲染出错</p>';
+      mdContent.innerHTML = '<p style="color:#ef4444;">渲染出错</p>';
     }
   });
 
