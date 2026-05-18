@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Shopify Product Helper",
-  "version": "1.0.0",
-  "description": "在 Shopify 商品编辑页面提供辅助功能",
+  "name": "Shopify Product Markdown Preview",
+  "version": "1.0.1",
+  "description": "在 Shopify 商品编辑页面提供Markdown预览功能",
   "permissions": [],
   "content_scripts": [
     {
