@@ -75,7 +75,7 @@ function syncMdToCm(text) {
 async function readCmToMd(textarea) {
   const cmText = await getCmTextAsync();
   if (cmText) {
-    // 预处理：Shopify 保存时会转义 > 为 &gt;，导致二次保存后无法被解析为引用块语法
+    // 有内容：解码后更新编辑器
     const decoded = cmText.replace(/&gt;/g, '>');
     memoryContent = decoded;
     textarea.value = decoded;
@@ -85,5 +85,20 @@ async function readCmToMd(textarea) {
     }
     return true;
   }
+
+  // cmText 为空：需要区分"CM6 尚未就绪"还是"描述确实为空"
+  const available = await isCmAvailable();
+  if (available) {
+    // CM6 已就绪但内容为空 → 清空编辑器
+    memoryContent = '';
+    textarea.value = '';
+    const mdContent = document.getElementById('sh-md-content');
+    if (mdContent) {
+      try { renderMarkdown('', mdContent); } catch (_) {}
+    }
+    return true;
+  }
+
+  // CM6 尚未就绪 → 返回 false 让外层重试
   return false;
 }
