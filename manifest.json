@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Shopify Product Markdown Preview",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "在 Shopify 商品编辑页面提供Markdown预览功能",
   "permissions": [],
   "content_scripts": [
