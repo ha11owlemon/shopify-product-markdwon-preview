@@ -75,11 +75,13 @@ function syncMdToCm(text) {
 async function readCmToMd(textarea) {
   const cmText = await getCmTextAsync();
   if (cmText) {
-    memoryContent = cmText;
-    textarea.value = cmText;
+    // 预处理：Shopify 保存时会转义 > 为 &gt;，导致二次保存后无法被解析为引用块语法
+    const decoded = cmText.replace(/&gt;/g, '>');
+    memoryContent = decoded;
+    textarea.value = decoded;
     const mdContent = document.getElementById('sh-md-content');
     if (mdContent) {
-      try { renderMarkdown(cmText, mdContent); } catch (_) {}
+      try { renderMarkdown(decoded, mdContent); } catch (_) {}
     }
     return true;
   }
