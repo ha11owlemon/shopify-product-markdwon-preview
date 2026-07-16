@@ -9,6 +9,9 @@
  * - markdown-it 配置：html:true, linkify:true, typographer:true, breaks:true
  */
 
+(function registerMarkdownRenderer(toolkit) {
+  'use strict';
+
 let markdownItInstance = null;
 
 function getMarkdownIt() {
@@ -125,7 +128,7 @@ function parseCouponContent(content) {
 }
 
 // ===== 复制优惠券代码到剪贴板（全局函数，供 onclick 调用） =====
-window.__shCopyCouponCode = function copyCouponCode(code, button) {
+function copyCouponCode(code, button) {
   var originalText = button.textContent;
 
   if (navigator.clipboard && window.isSecureContext) {
@@ -138,7 +141,7 @@ window.__shCopyCouponCode = function copyCouponCode(code, button) {
   } else {
     fallbackCopyTextToClipboard(code, button, originalText);
   }
-};
+}
 
 function fallbackCopyTextToClipboard(code, button, originalText) {
   var textArea = document.createElement("textarea");
@@ -307,3 +310,15 @@ function renderMarkdown(markdownText, bodyEl) {
   // 生成 TOC
   generateTOC(bodyEl);
 }
+
+toolkit.features.markdown = {
+  isAvailable: function () {
+    return Boolean(getMarkdownIt());
+  },
+  render: renderMarkdown,
+  copyCouponCode: copyCouponCode
+};
+
+// Kept for existing coupon markup, which invokes this callback from an inline handler.
+window.__shCopyCouponCode = copyCouponCode;
+})(window.OperationsToolkit);

@@ -1,35 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "Shopify Product Markdown Preview",
-  "version": "1.0.2",
+  "name": "工具箱",
+  "version": "1.0.4",
   "description": "在 Shopify 商品编辑页面提供Markdown预览功能",
   "permissions": [],
   "content_scripts": [
     {
       "matches": [
-        "https://admin.shopify.com/store/*/products/*",
-        "https://*.myshopify.com/admin/products/*"
+        "https://admin.shopify.com/store/*",
+        "https://*.myshopify.com/admin/*"
       ],
       "js": [
-        "scripts/cm-inject.js"
+        "scripts/integrations/shopify/codemirror-main.js"
       ],
       "world": "MAIN",
       "run_at": "document_idle"
     },
     {
       "matches": [
-        "https://admin.shopify.com/store/*/products/*",
-        "https://*.myshopify.com/admin/products/*"
+        "https://admin.shopify.com/store/*",
+        "https://*.myshopify.com/admin/*"
       ],
       "js": [
         "libs/markdown-it.min.js",
         "libs/markdown-it-container.js",
-        "scripts/page-detector.js",
-        "scripts/markdown-renderer.js",
-        "scripts/cm-bridge.js",
-        "scripts/status-indicator.js",
-        "scripts/popup.js",
-        "content.js"
+        "scripts/core/registry.js",
+        "scripts/core/runtime.js",
+        "scripts/integrations/shopify/codemirror-bridge.js",
+        "scripts/integrations/shopify/product-editor.js",
+        "scripts/features/markdown/renderer.js",
+        "scripts/features/markdown/status-indicator.js",
+        "scripts/features/markdown/panel.js",
+        "scripts/features/markdown/tool.js",
+        "scripts/bootstrap.js"
       ],
       "css": ["style.css"],
       "run_at": "document_idle"

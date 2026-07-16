@@ -28,24 +28,20 @@ A Chrome / Edge browser extension that adds a real-time Markdown preview panel t
 3. Click **Load extension**
 4. Select this project folder
 
-## Project Structure
+## Architecture
 
-```
-├── manifest.json              # Extension manifest (Manifest V3)
-├── content.js                 # Entry point: page detection + floating button
-├── style.css                  # All styles (popup UI + Ella theme Markdown styles)
-├── icons/                     # Extension icons (16/48/128 px)
-├── libs/
-│   ├── markdown-it.min.js     # markdown-it core
-│   └── markdown-it-container.js  # Container plugin (admonition, coupon)
-└── scripts/
-    ├── page-detector.js       # URL matching for Shopify product edit pages
-    ├── cm-inject.js           # Injected into MAIN world to access CodeMirror 6
-    ├── cm-bridge.js           # Bridge: read/write CM6 content from content script
-    ├── markdown-renderer.js   # Markdown rendering engine (TOC, admonitions, coupons)
-    ├── popup.js               # Popup panel UI + editor logic
-    └── status-indicator.js    # CM6 connection status polling
-```
+The extension is now organized as a small operations-tool platform. The
+current Shopify Markdown preview is its first registered feature; its existing
+behaviour has not changed.
+
+- `scripts/core/` contains the feature registry and lifecycle runtime.
+- `scripts/integrations/shopify/` contains all Shopify-specific DOM and
+  CodeMirror details.
+- `scripts/features/markdown/` contains the Markdown preview feature only.
+- `scripts/bootstrap.js` selects the integration and features to mount.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the feature and integration
+contracts used to add future operations tools.
 
 ## Supported Pages
 

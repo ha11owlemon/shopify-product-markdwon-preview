@@ -7,8 +7,34 @@
  *   MAIN world    → sh-cm-bridge-response (响应)
  */
 
-(function () {
+(function installShopifyCodeMirrorBridge() {
   'use strict';
+
+  function installRouteChangeBridge() {
+    if (window.__shopifyHelperRouteBridgeInstalled) return;
+    window.__shopifyHelperRouteBridgeInstalled = true;
+
+    const notify = () => {
+      window.dispatchEvent(new Event('shopify-helper-location-change'));
+    };
+
+    const wrap = (methodName) => {
+      const original = history[methodName];
+      if (typeof original !== 'function') return;
+
+      history[methodName] = function wrappedHistoryMethod(...args) {
+        const result = original.apply(this, args);
+        notify();
+        return result;
+      };
+    };
+
+    wrap('pushState');
+    wrap('replaceState');
+    window.addEventListener('popstate', notify);
+  }
+
+  installRouteChangeBridge();
 
   let cachedView = null;
 
