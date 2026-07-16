@@ -828,3 +828,619 @@ div[data-markdown-body] .coupon-container {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* ==================================================================
+   AliExpress pricing calculator
+   ================================================================== */
+#pricing-calculator-container {
+  position: fixed;
+  top: 124px;
+  right: 50px;
+  z-index: 99999;
+}
+
+#pricing-calculator-button {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a6cdc;
+  background: #e8f1ff;
+  border: 1px solid #9fc1f7;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+#pricing-calculator-button:hover {
+  color: #0759b1;
+  background: #dceaff;
+  border-color: #6da3ee;
+  box-shadow: 0 2px 8px rgba(10, 108, 220, 0.2);
+}
+
+#pricing-calculator-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000010;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+#pricing-calculator-panel {
+  position: fixed;
+  top: 76px;
+  right: 34px;
+  z-index: 1000011;
+  width: min(448px, calc(100vw - 32px));
+  max-height: calc(100vh - 104px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #172033;
+  background: #fff;
+  border: 1px solid #dbe3f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.22);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.pc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 15px;
+  border-bottom: 1px solid #e8edf5;
+}
+
+.pc-header h2 {
+  margin: 2px 0 0;
+  color: #13213a;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.pc-eyebrow {
+  margin: 0;
+  color: #5c6d88;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.pc-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: #60708a;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.pc-close:hover {
+  color: #172033;
+  background: #f1f5fa;
+}
+
+.pc-scroll {
+  overflow-y: auto;
+  padding: 16px 20px 22px;
+}
+
+.pc-description,
+.pc-section-note {
+  margin: 0;
+  color: #61708a;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pc-template-section {
+  margin-top: 14px;
+  padding: 12px;
+  background: #f4f8fe;
+  border: 1px solid #d9e5f5;
+  border-radius: 10px;
+}
+
+.pc-template-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.pc-template-heading h3 {
+  margin: 0;
+  color: #263b5b;
+  font-size: 13px;
+}
+
+.pc-template-heading span {
+  color: #6d7e99;
+  font-size: 10px;
+}
+
+.pc-template-select-row,
+.pc-template-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.pc-template-actions {
+  margin-top: 8px;
+}
+
+.pc-template-select {
+  flex: 1;
+  min-width: 0;
+  height: 31px;
+  padding: 0 8px;
+  color: #263b5b;
+  background: #fff;
+  border: 1px solid #c9d8ec;
+  border-radius: 6px;
+  outline: none;
+  font-size: 12px;
+}
+
+.pc-template-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.pc-template-button {
+  height: 31px;
+  padding: 0 9px;
+  color: #2469b6;
+  background: #fff;
+  border: 1px solid #c9d8ec;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.pc-template-button:hover:not(:disabled) {
+  color: #0b559e;
+  background: #edf5ff;
+  border-color: #97bbe9;
+}
+
+.pc-template-button:disabled,
+.pc-template-select:disabled {
+  color: #9aa8bb;
+  background: #f5f7fa;
+  border-color: #e0e6ee;
+  cursor: not-allowed;
+}
+
+.pc-template-delete {
+  color: #b42318;
+  border-color: #efc2bd;
+}
+
+.pc-template-delete:hover:not(:disabled) {
+  color: #8e160e;
+  background: #fff3f2;
+  border-color: #e79e96;
+}
+
+.pc-template-message {
+  margin: 8px 0 0;
+  color: #39724c;
+  font-size: 11px;
+}
+
+.pc-section {
+  margin-top: 20px;
+}
+
+.pc-section h3 {
+  margin: 0 0 10px;
+  color: #223049;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.pc-section-note {
+  margin: -4px 0 10px;
+}
+
+.pc-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.pc-grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pc-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pc-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 16px;
+}
+
+.pc-field-label {
+  color: #52617a;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.pc-field-label small,
+.pc-cost-summary small {
+  margin-left: 4px;
+  color: #8a98ad;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.pc-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 9px;
+  color: #1b2941;
+  background: #fff;
+  border: 1px solid #cfd9e7;
+  border-radius: 7px;
+  outline: none;
+  font-size: 13px;
+}
+
+.pc-input-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-input-control .pc-input,
+.pc-formula-control .pc-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pc-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.pc-formula-field {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f5f8fc;
+  border: 1px solid #e2e8f2;
+  border-radius: 9px;
+}
+
+.pc-formula-field.pc-field-overridden {
+  background: #fff9e9;
+  border-color: #f1d58e;
+}
+
+.pc-formula-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-formula-input {
+  flex: 1;
+  background: #fff;
+  font-weight: 600;
+}
+
+.pc-auto-label,
+.pc-override-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.pc-auto-label {
+  color: #2563a9;
+  background: #e6f0ff;
+}
+
+.pc-override-badge {
+  color: #8a5a00;
+  background: #fff0c2;
+}
+
+.pc-reset-field,
+.pc-modified-notice button,
+.pc-copy-value {
+  padding: 0;
+  color: #2469b6;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.pc-reset-field:hover,
+.pc-modified-notice button:hover,
+.pc-copy-value:hover {
+  color: #0a4d95;
+}
+
+.pc-copy-value {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c9d8ec;
+  border-radius: 6px;
+  background: #f7fbff;
+  text-decoration: none;
+}
+
+.pc-copy-value svg {
+  width: 15px;
+  height: 15px;
+}
+
+.pc-copy-value:disabled {
+  color: #9ba7b8;
+  border-color: #e1e7ef;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.pc-cost-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 9px;
+  color: #52617a;
+  background: #f7f9fc;
+  border: 1px solid #e1e7f0;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.pc-cost-summary strong {
+  margin-top: 2px;
+  color: #243a5b;
+  font-size: 14px;
+}
+
+.pc-cost-summary .pc-copy-value {
+  align-self: flex-start;
+  margin-top: 5px;
+}
+
+.pc-grid .pc-formula-field {
+  margin-top: 0;
+}
+
+.pc-modified-notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  color: #815500;
+  background: #fff8df;
+  border: 1px solid #f2d583;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pc-validation {
+  margin: 8px 0 0;
+  color: #b42318;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  #pricing-calculator-container {
+    top: 122px;
+    right: 18px;
+  }
+
+  #pricing-calculator-panel {
+    top: 16px;
+    right: 16px;
+    max-height: calc(100vh - 32px);
+  }
+}
+
+/* ==================================================================
+   Draggable floating toolbox launcher
+   ================================================================== */
+#operations-toolbox-launcher {
+  position: fixed;
+  z-index: 99999;
+  width: 44px;
+  height: 44px;
+  user-select: none;
+}
+
+#operations-toolbox-handle,
+.tb-tool-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: #26313f;
+  background: #fff;
+  border: 1px solid #e0e5eb;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+#operations-toolbox-handle {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  box-shadow: 0 3px 12px rgba(16, 24, 40, 0.16);
+  touch-action: none;
+}
+
+.tb-expanded #operations-toolbox-handle {
+  color: #0f172a;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.16);
+}
+
+#operations-toolbox-handle:hover,
+.tb-tool-button:hover {
+  color: #111827;
+  background: #f7f8fa;
+}
+
+#operations-toolbox-handle svg,
+.tb-tool-button svg {
+  width: 21px;
+  height: 21px;
+  transition: transform 0.18s ease;
+}
+
+#operations-toolbox-tools {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 5px 10px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 8px) scale(0.94);
+  transform-origin: bottom center;
+  background: #fff;
+  border: 1px solid #e0e5eb;
+  border-radius: 24px;
+  box-shadow: 0 8px 22px rgba(16, 24, 40, 0.16);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+}
+
+.tb-open-down #operations-toolbox-tools {
+  top: 56px;
+  bottom: auto;
+  padding: 10px 5px 5px;
+  transform: translate(-50%, -8px) scale(0.94);
+  transform-origin: top center;
+  border-radius: 24px;
+}
+
+.tb-expanded #operations-toolbox-tools {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.tb-tool-button {
+  position: relative;
+  border-radius: 50%;
+  border-color: transparent;
+}
+
+.tb-tool-button:hover {
+  color: #0f172a;
+  background: #edf2f7;
+  transform: scale(1.06);
+}
+
+.tb-tool-button:hover svg {
+  transform: scale(1.06);
+}
+
+.tb-tool-button::after {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  z-index: 2;
+  padding: 7px 10px;
+  color: #fff;
+  content: attr(aria-label);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(4px);
+  background: #151b26;
+  border-radius: 7px;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.tb-tool-button::before {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 4px);
+  z-index: 2;
+  width: 0;
+  height: 0;
+  content: "";
+  opacity: 0;
+  transform: translateY(-50%) translateX(4px);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid #151b26;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.tb-tool-button:hover::after,
+.tb-tool-button:hover::before {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.tb-edge-left .tb-tool-button::after {
+  right: auto;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.tb-edge-left .tb-tool-button::before {
+  right: auto;
+  left: calc(100% + 4px);
+  transform: translateY(-50%) translateX(-4px);
+  border-right: 6px solid #151b26;
+  border-left: 0;
+}
+
+.tb-edge-left .tb-tool-button:hover::after,
+.tb-edge-left .tb-tool-button:hover::before {
+  transform: translateY(-50%) translateX(0);
+}
+
+#operations-toolbox-launcher.tb-dragging,
+#operations-toolbox-launcher.tb-dragging #operations-toolbox-handle {
+  cursor: grabbing;
+}

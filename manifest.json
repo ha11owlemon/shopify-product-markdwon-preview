@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "工具箱",
-  "version": "1.0.4",
-  "description": "在 Shopify 商品编辑页面提供Markdown预览功能",
-  "permissions": [],
+  "version": "1.1.0",
+  "description": "在 Shopify 商品编辑页面提供运营工具",
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": [
@@ -26,12 +26,17 @@
         "libs/markdown-it-container.js",
         "scripts/core/registry.js",
         "scripts/core/runtime.js",
+        "scripts/core/floating-toolbox.js",
         "scripts/integrations/shopify/codemirror-bridge.js",
         "scripts/integrations/shopify/product-editor.js",
         "scripts/features/markdown/renderer.js",
         "scripts/features/markdown/status-indicator.js",
         "scripts/features/markdown/panel.js",
         "scripts/features/markdown/tool.js",
+        "scripts/features/pricing-calculator/formula.js",
+        "scripts/features/pricing-calculator/templates.js",
+        "scripts/features/pricing-calculator/panel.js",
+        "scripts/features/pricing-calculator/tool.js",
         "scripts/bootstrap.js"
       ],
       "css": ["style.css"],

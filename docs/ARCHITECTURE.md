@@ -1,8 +1,8 @@
 # Extension architecture
 
-This extension is structured as an operations-tool platform, with the existing
-Shopify Markdown preview as its first feature. It intentionally keeps the
-current user-facing behaviour unchanged.
+This extension is structured as an operations-tool platform. It currently
+ships Shopify Markdown preview and an AliExpress pricing calculator as separate
+features.
 
 ## Layers
 
@@ -20,11 +20,17 @@ scripts/features/          independently mountable operations tools
   integrations and features under `window.OperationsToolkit`.
 - `core/runtime.js` mounts the requested features when an integration surface
   matches the current page and tears them down on route changes.
+- `core/floating-toolbox.js` provides one draggable, edge-snapping launcher for
+  page-level tools. Features register an item instead of creating their own
+  fixed button.
 - `integrations/shopify/` owns Shopify URL recognition, fragile DOM selectors,
   and the CodeMirror bridge. No feature should query Shopify DOM directly.
 - `features/markdown/` owns the current Markdown button, panel, renderer, and
   sync-status UI. It asks the integration for an editor bridge instead of
   accessing CodeMirror itself.
+- `features/pricing-calculator/` owns the AliExpress formula model, its panel,
+  local-template store, and its product-page launcher. It does not depend on
+  CodeMirror.
 
 ## Adding a future tool
 
@@ -55,14 +61,14 @@ that need them rather than global assumptions.
 
 ## Current composition
 
-The active composition remains exactly one integration and one feature:
+The active composition has one integration and two features:
 
 ```js
 {
   integrationId: 'shopify-product-editor',
-  featureIds: ['markdown-preview']
+  featureIds: ['markdown-preview', 'pricing-calculator']
 }
 ```
 
-No calculator, storage permission, external service, or new page scope was
-introduced in this refactor.
+The calculator does not add a storage permission, external service, or new page
+scope. Formula overrides are scoped to its currently open panel.

@@ -4,6 +4,6 @@
 
   toolkit.bootstrap({
     integrationId: 'shopify-product-editor',
-    featureIds: ['markdown-preview']
+    featureIds: ['markdown-preview', 'pricing-calculator']
   });
 })(window.OperationsToolkit);

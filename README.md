@@ -1,6 +1,6 @@
-# Shopify Markdown Preview
+# 工具箱
 
-A Chrome / Edge browser extension that adds a real-time Markdown preview panel to the Shopify product editor, with rendering styles matching the [Ella Shopify theme](https://themeforest.net/item/ella-multipurpose-shopify-theme-os-20/23080797).
+A Chrome / Edge browser extension for Shopify product-page operations tools. It currently provides Markdown preview and an AliExpress pricing calculator.
 
 ## Features
 
@@ -11,6 +11,9 @@ A Chrome / Edge browser extension that adds a real-time Markdown preview panel t
 - **Admonition blocks** — `:::note`, `:::tip`, `:::info`, `:::warning`, `:::danger`, `:::caution`, `:::success` (with `:::!` bang syntax variant).
 - **Coupon containers** — `:::coupon` blocks with copy-to-clipboard functionality.
 - **SPA-aware** — Detects URL changes in Shopify's single-page admin without page reloads.
+- **AliExpress pricing calculator** — Calculates international freight, profit, suggested USD price, and promotional price references using the supplied pricing workbook's rules.
+- **Manual overrides** — Any calculated pricing field can be edited directly. Edited values display an **已修改** badge and can be restored to automatic calculation.
+- **Local templates** — Save a complete calculation, including manual overrides, as a local template; templates can be loaded, updated, or deleted on demand.
 
 ## Installation
 
@@ -30,15 +33,19 @@ A Chrome / Edge browser extension that adds a real-time Markdown preview panel t
 
 ## Architecture
 
-The extension is now organized as a small operations-tool platform. The
-current Shopify Markdown preview is its first registered feature; its existing
-behaviour has not changed.
+The extension is organized as a small operations-tool platform. Shopify
+Markdown preview and AliExpress pricing are registered as separate features.
 
 - `scripts/core/` contains the feature registry and lifecycle runtime.
 - `scripts/integrations/shopify/` contains all Shopify-specific DOM and
   CodeMirror details.
 - `scripts/features/markdown/` contains the Markdown preview feature only.
+- `scripts/features/pricing-calculator/` contains pricing rules, panel UI, and
+  Shopify product-page launcher.
 - `scripts/bootstrap.js` selects the integration and features to mount.
+
+The two current tools are collapsed into a shared launcher that can be dragged
+and snaps to either side of the browser window. Its position is saved locally.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the feature and integration
 contracts used to add future operations tools.
