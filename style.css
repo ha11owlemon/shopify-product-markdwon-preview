@@ -860,13 +860,6 @@ div[data-markdown-body] .coupon-container {
   box-shadow: 0 2px 8px rgba(10, 108, 220, 0.2);
 }
 
-#pricing-calculator-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000010;
-  background: rgba(15, 23, 42, 0.28);
-}
-
 #pricing-calculator-panel {
   position: fixed;
   top: 76px;
@@ -1385,7 +1378,7 @@ div[data-markdown-body] .coupon-container {
   z-index: 2;
   padding: 7px 10px;
   color: #fff;
-  content: attr(aria-label);
+  content: attr(data-tooltip);
   opacity: 0;
   pointer-events: none;
   transform: translateY(-50%) translateX(4px);

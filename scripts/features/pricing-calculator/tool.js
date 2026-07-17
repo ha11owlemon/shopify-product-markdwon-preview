@@ -13,7 +13,7 @@
       const panel = toolkit.features.pricingPanel.create();
       const unregister = toolkit.floatingToolbox.register({
         id: 'pricing-calculator',
-        label: '速卖通定价计算器',
+        label: '定价计算器',
         icon: CALCULATOR_ICON,
         onClick: panel.open
       });

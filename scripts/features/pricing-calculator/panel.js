@@ -61,7 +61,6 @@
   toolkit.features.pricingPanel = {
     create: function () {
       const calculator = toolkit.features.pricingFormula.create();
-      let overlay = null;
       let panel = null;
       let templates = [];
       let templatesReady = false;
@@ -181,9 +180,7 @@
 
       function close() {
         if (!panel) return;
-        overlay.remove();
         panel.remove();
-        overlay = null;
         panel = null;
       }
 
@@ -235,16 +232,12 @@
 
       function open() {
         if (panel) return;
-        overlay = document.createElement('div');
-        overlay.id = 'pricing-calculator-overlay';
         panel = document.createElement('aside');
         panel.id = 'pricing-calculator-panel';
         panel.setAttribute('aria-label', '速卖通定价计算器');
-        document.body.appendChild(overlay);
         document.body.appendChild(panel);
         render();
 
-        overlay.addEventListener('click', close);
         panel.addEventListener('change', function (event) {
           const target = event.target;
           if (target instanceof HTMLSelectElement && target.dataset.templateSelect !== undefined) {

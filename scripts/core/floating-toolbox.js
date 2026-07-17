@@ -61,8 +61,8 @@
       const button = document.createElement('button');
       button.className = 'tb-tool-button';
       button.type = 'button';
-      button.title = item.label;
       button.setAttribute('aria-label', item.label);
+      button.dataset.tooltip = item.label;
       button.innerHTML = item.icon;
       button.addEventListener('click', function () {
         setExpanded(false);
@@ -133,7 +133,6 @@
     handle = document.createElement('button');
     handle.id = 'operations-toolbox-handle';
     handle.type = 'button';
-    handle.title = '打开工具箱，可拖动到屏幕边缘';
     handle.setAttribute('aria-label', '打开工具箱，可拖动到屏幕边缘');
     handle.setAttribute('aria-expanded', 'false');
     handle.innerHTML = TOOLBOX_ICON;
