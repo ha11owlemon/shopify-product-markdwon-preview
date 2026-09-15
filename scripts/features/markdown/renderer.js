@@ -312,6 +312,16 @@ function renderMarkdown(markdownText, bodyEl) {
 }
 
 toolkit.features.markdown = {
+  toDescriptionHtml: function (markdownText) {
+    const md = getMarkdownIt();
+    if (!md) throw new Error('Markdown 渲染器未加载');
+    // Work on a separate string: retain coupons in the editable source.
+    const exportMarkdown = String(markdownText || '').replace(
+      /^ {0,3}(:{3,})[\t ]*coupon[\t ]*\r?\n[\s\S]*?(?:^ {0,3}\1:*[\t ]*(?:\r?\n|$)|(?![\s\S]))/gm,
+      ''
+    );
+    return md.render(exportMarkdown);
+  },
   isAvailable: function () {
     return Boolean(getMarkdownIt());
   },

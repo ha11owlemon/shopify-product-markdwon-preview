@@ -9,7 +9,6 @@
   toolkit.features.markdownPanel = {
     create: function (integration, bridge) {
       let memoryContent = '';
-      let status = null;
 
       function renderInto(content, element) {
         try {
@@ -21,21 +20,10 @@
 
       function readEditorInto(textarea, output) {
         return bridge.read().then(function (editorText) {
-          if (editorText) {
-            const decoded = editorText.replace(/&gt;/g, '>');
-            memoryContent = decoded;
-            textarea.value = decoded;
-            renderInto(decoded, output);
-            return true;
-          }
-
-          return bridge.isAvailable().then(function (available) {
-            if (!available) return false;
-            memoryContent = '';
-            textarea.value = '';
-            renderInto('', output);
-            return true;
-          });
+          memoryContent = editorText;
+          textarea.value = editorText;
+          renderInto(editorText, output);
+          return true;
         });
       }
 
@@ -77,21 +65,35 @@
         document.body.appendChild(overlay);
         document.body.appendChild(popup);
 
-        try {
-          const targetButton = integration.findAdditionalActionsButton();
-          if (targetButton && targetButton.getAttribute('aria-pressed') === 'false') {
-            targetButton.click();
-          }
-        } catch (_) {}
-
         requestAnimationFrame(function () {
           overlay.classList.add('sh-overlay-visible');
           popup.classList.add('sh-popup-visible');
         });
 
-        const close = function () {
-          if (memoryContent) bridge.write(memoryContent).catch(function () {});
-          if (status) status.stop();
+        let loaded = false;
+        let busy = false;
+        const route = integration.getRouteKey();
+        const showStatus = function (message, failed) {
+          document.getElementById('sh-sync-text').textContent = message;
+          document.getElementById('sh-sync-dot').className = 'sh-sync-dot ' + (failed ? 'sh-sync-failed' : 'sh-sync-synced');
+        };
+        const close = async function () {
+          if (busy) return;
+          if (loaded) {
+            busy = true;
+            textarea.disabled = true;
+            try {
+              if (integration.getRouteKey() !== route) throw new Error('商品页面已切换，请复制保留编辑内容后重新打开');
+              const html = toolkit.features.markdown.toDescriptionHtml(memoryContent);
+              showStatus('正在填入 Markdown 和 HTML…');
+              await bridge.write(memoryContent, html);
+            } catch (error) {
+              showStatus(error.message, true);
+              busy = false;
+              textarea.disabled = false;
+              return;
+            }
+          }
           overlay.classList.remove('sh-overlay-visible');
           popup.classList.remove('sh-popup-visible');
           setTimeout(function () {
@@ -110,27 +112,22 @@
           return;
         }
 
-        if (memoryContent) {
-          textarea.value = memoryContent;
-          renderInto(memoryContent, output);
-        }
-
-        const tryReadEditor = function (retries) {
-          readEditorInto(textarea, output).then(function (read) {
-            if (!read && retries < 6) setTimeout(function () { tryReadEditor(retries + 1); }, 500);
-          }).catch(function () {
-            if (retries < 6) setTimeout(function () { tryReadEditor(retries + 1); }, 500);
-          });
-        };
-        tryReadEditor(0);
+        textarea.disabled = true;
+        memoryContent = '';
+        readEditorInto(textarea, output).then(function () {
+          if (!popup.isConnected) return;
+          loaded = true;
+          textarea.disabled = false;
+          showStatus('已读取 Markdown；关闭时填入两个字段，之后请在 Shopify 点击保存');
+        }).catch(function (error) {
+          if (popup.isConnected) showStatus(error.message, true);
+        });
 
         textarea.addEventListener('input', function () {
           memoryContent = textarea.value;
           renderInto(memoryContent, output);
         });
 
-        status = toolkit.features.markdownStatus.create(integration.hasEditorElement);
-        status.start();
       }
 
       return { open: open };
