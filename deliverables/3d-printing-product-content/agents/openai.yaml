@@ -1,4 +1,0 @@
-interface:
-  display_name: "3D打印商品内容生成"
-  short_description: "识别产品、检索依据并生成可校验的双语商品文案结果。"
-  default_prompt: "Use $3d-printing-product-content to generate verified bilingual content for this 3D-printing accessory."
