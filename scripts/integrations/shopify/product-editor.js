@@ -5,6 +5,39 @@
 (function registerShopifyProductEditor(toolkit) {
   'use strict';
 
+  // Shopify's quick fields now render native controls inside open shadow roots.
+  function queryAll(selector, root) {
+    root = root || document;
+    const elements = Array.from(root.querySelectorAll(selector));
+    root.querySelectorAll('*').forEach(function (element) {
+      if (element.shadowRoot) elements.push.apply(elements, queryAll(selector, element.shadowRoot));
+    });
+    return elements;
+  }
+
+  function isVisible(element) {
+    return element.getClientRects().length > 0 && element.getAttribute('aria-hidden') !== 'true';
+  }
+
+  function markdownHost() {
+    const hosts = queryAll('s-internal-quick-text-area-field').filter(function (host) {
+      const row = host.closest('[id$="-anchor"]');
+      if (row && /^PRODUCT\.metafields\./.test(row.id)) {
+        return row.id === 'PRODUCT.metafields.custom.markdownDesc-anchor';
+      }
+      return matchesMarkdownName(host.getAttribute('accessibilitylabel'))
+        || host.getAttribute('name') === 'custom.markdownDesc';
+    });
+    if (hosts.length > 1) throw new Error('检测到多个 Markdown 元字段，请确认商品字段配置');
+    return hosts[0] || null;
+  }
+
+  function sourceButton() {
+    return queryAll('button[aria-label]').find(function (button) {
+      return isVisible(button) && /^(显示 HTML|显示编辑器|Show HTML|Show editor)$/i.test(button.getAttribute('aria-label'));
+    }) || document.querySelector('[class*="AdditionalActionsContainer"] button');
+  }
+
   function matchesProductEditor() {
     const pathParts = new URL(window.location.href).pathname.split('/').filter(Boolean);
     return pathParts.some(function (part, index) {
@@ -22,7 +55,7 @@
     const maxWait = timeout || 15000;
     const formIsReady = function () {
       return Boolean(
-        document.querySelector('input[name="title"], #title-input, [class*="TitleField"] input')
+        document.querySelector('input[name="title"], #title-input, [class*="TitleField"] input, iframe[id^="product-description-"]')
         || document.querySelector('.cm-editor')
         || document.querySelector('[class*="ProductStatus"], [class*="StatusSelect"]')
         || document.querySelector('[class*="FormLayout"], [class*="TextField"]')
@@ -60,8 +93,13 @@
   function findMarkdownField() {
     const candidates = new Set();
     const matchesName = matchesMarkdownName;
-    document.querySelectorAll('textarea, input').forEach(function (field) {
+    queryAll('textarea, input').forEach(function (field) {
       if (field.closest('#shopify-helper-popup')) return;
+      if (!isVisible(field)) return;
+      const host = field.getRootNode().host;
+      const row = (host || field).closest('[id$="-anchor"]');
+      if (row && /^PRODUCT\.metafields\./.test(row.id) && row.id !== 'PRODUCT.metafields.custom.markdownDesc-anchor') return;
+      if (host && host === markdownHost()) candidates.add(field);
       if (matchesName(field.name) || matchesName(field.getAttribute('aria-label'))
         || Array.from(field.labels || []).some(function (label) { return matchesName(label.textContent); })
         || (field.getAttribute('aria-labelledby') || '').split(/\s+/).some(function (id) {
@@ -83,6 +121,21 @@
 
   async function ensureMarkdownField() {
     try { return findMarkdownField(); } catch (_) {}
+    const wrongField = document.getElementById('PRODUCT.metafields.custom.markdown-anchor');
+    const host = markdownHost();
+    if (host) {
+      const activator = host.shadowRoot?.querySelector('fieldset');
+      if (!activator) throw new Error('Markdown 元字段组件尚未加载，请稍后重试');
+      activator.click();
+      for (let attempt = 0; attempt < 50; attempt++) {
+        await new Promise(function (resolve) { setTimeout(resolve, 100); });
+        try { return findMarkdownField(); } catch (_) {}
+      }
+      throw new Error('无法展开 Markdown 元字段的多行输入框');
+    }
+    if (wrongField && !document.getElementById('PRODUCT.metafields.custom.markdownDesc-anchor')) {
+      throw new Error('当前店铺缺少 custom.markdownDesc 元字段，请先修正字段定义');
+    }
     const labels = Array.from(document.querySelectorAll('label, button, [role="button"], span, p'))
       .filter(function (element) {
         return !element.closest('#shopify-helper-popup') && element.getClientRects().length
@@ -107,10 +160,10 @@
 
   async function ensureSourceEditor() {
     if (findEditorElement()) return;
-    const button = document.querySelector('[class*="AdditionalActionsContainer"] button');
+    const button = sourceButton();
     if (!button) throw new Error('未找到商品描述的源代码切换按钮');
     button.click();
-    for (let attempt = 0; attempt < 30; attempt++) {
+    for (let attempt = 0; attempt < 80; attempt++) {
       await new Promise(function (resolve) { setTimeout(resolve, 100); });
       if (findEditorElement()) return;
     }
@@ -121,8 +174,8 @@
     const field = await ensureMarkdownField();
     const prototype = field.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     Object.getOwnPropertyDescriptor(prototype, 'value').set.call(field, value);
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    field.dispatchEvent(new Event('change', { bubbles: true }));
+    field.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true, inputType: 'insertText', data: value }));
+    field.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     field.blur();
     await new Promise(function (resolve) { setTimeout(resolve, 100); });
     if ((await ensureMarkdownField()).value !== value) throw new Error('Markdown 元字段写入未生效，请重试');
@@ -147,7 +200,7 @@
       return Boolean(findEditorElement());
     },
     findAdditionalActionsButton: function () {
-      return document.querySelector('[class*="AdditionalActionsContainer"] button');
+      return sourceButton();
     },
     createEditorBridge: function () {
       const source = toolkit.adapters.shopifyCodeMirror.create();

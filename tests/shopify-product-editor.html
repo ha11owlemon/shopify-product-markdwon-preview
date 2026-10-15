@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Shopify editor DOM regression checks</title>
+<pre id="result">Running…</pre>
+<main id="fixture"></main>
+<script>
+  let integration;
+  let htmlValue = '';
+  window.OperationsToolkit = {
+    registerIntegration(value) { integration = value; },
+    adapters: { shopifyCodeMirror: { create() { return {
+      async read() { return htmlValue; },
+      async write(value) { htmlValue = value; return { ok: true }; }
+    }; } } }
+  };
+</script>
+<script src="../scripts/integrations/shopify/product-editor.js"></script>
+<script>
+  (async function () {
+    const fixture = document.getElementById('fixture');
+    const passed = [];
+    function check(condition, message) {
+      if (!condition) throw new Error(message);
+      passed.push(message);
+    }
+    function sourceToggle(label) {
+      const toggle = document.createElement('button');
+      toggle.setAttribute('aria-label', label);
+      toggle.addEventListener('click', function () {
+        const editor = document.createElement('div');
+        editor.className = 'cm-editor';
+        editor.innerHTML = '<div class="cm-content" contenteditable="true"></div>';
+        fixture.appendChild(editor);
+      });
+      fixture.appendChild(toggle);
+    }
+    function quickField(key) {
+      const row = document.createElement('div');
+      row.id = 'PRODUCT.metafields.custom.' + key + '-anchor';
+      const host = document.createElement('s-internal-quick-text-area-field');
+      host.setAttribute('accessibilitylabel', '描述（markdown）');
+      const root = host.attachShadow({ mode: 'open' });
+      root.innerHTML = '<fieldset><textarea readonly aria-label="描述（markdown）"></textarea></fieldset>';
+      const field = root.querySelector('textarea');
+      root.querySelector('fieldset').addEventListener('click', () => { field.readOnly = false; });
+      field.addEventListener('blur', () => { field.readOnly = true; });
+      row.appendChild(host);
+      fixture.appendChild(row);
+      return { host, field };
+    }
+    try {
+      const target = quickField('markdownDesc');
+      let inputEvents = 0;
+      let changeEvents = 0;
+      target.host.addEventListener('input', () => inputEvents++);
+      target.host.addEventListener('change', () => changeEvents++);
+      sourceToggle('显示 HTML');
+      const bridge = integration.createEditorBridge();
+      check(await bridge.read() === '', 'Empty shadow field opens and reads');
+      await bridge.write('## Markdown\nRaw value', '<h2>Markdown</h2>');
+      check(await bridge.read() === '## Markdown\nRaw value', 'Shadow field round trip');
+      check(htmlValue === '<h2>Markdown</h2>', 'HTML source mode toggles and writes');
+      check(inputEvents === 1 && changeEvents === 1, 'Input and change cross the shadow boundary');
+      await bridge.write('', '');
+      check(await bridge.read() === '' && htmlValue === '', 'Clearing both fields works');
+
+      fixture.replaceChildren();
+      quickField('markdown');
+      let rejected = false;
+      try { await bridge.read(); } catch (error) { rejected = error.message.includes('custom.markdownDesc'); }
+      check(rejected, 'Wrong namespace/key is rejected');
+
+      fixture.replaceChildren();
+      fixture.innerHTML = '<label for="legacy">描述（markdown）</label><textarea id="legacy">Legacy source</textarea>';
+      sourceToggle('Show HTML');
+      check(await bridge.read() === 'Legacy source', 'Legacy light DOM still reads');
+      await bridge.write('Changed legacy', '<p>Changed legacy</p>');
+      check(fixture.querySelector('textarea').value === 'Changed legacy', 'Legacy light DOM still writes');
+      document.getElementById('result').textContent = 'PASS\n' + passed.join('\n');
+      document.documentElement.dataset.testStatus = 'passed';
+    } catch (error) {
+      document.getElementById('result').textContent = 'FAIL\n' + error.stack;
+      document.documentElement.dataset.testStatus = 'failed';
+    }
+  })();
+</script>
